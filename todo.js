@@ -1,4 +1,4 @@
-// 
+//
 // Todo.js
 //
 
@@ -9,12 +9,14 @@ function getById(element) {
 
 // set the contents of an element by id
 function setById(element, value) {
-	document.getElementById(element).innerHTML = value
+	if (document.getElementById(element).innerHTML)
+		document.getElementById(element).innerHTML = value
+	else
+		document.getElementById(element).value = value
 }
 
 // mix options into object
-function mix(options, object)
-{
+function mix(options, object) {
 	options = options || {};
 
 	for(var key in options) {
@@ -28,57 +30,79 @@ function newObject(options) {
 };
 
 
-function makeTodo(options) {
-	var obj = new newObject(options);
+/*
+ * Todo
+ */
 
-	obj.render = function() {
+function Todo(options) {
+	mix(options, this);
+}
+
+Todo.prototype = {
+	render: function() {
 		var container = getById("todoList")
 		var list = document.createElement("li");
 		var text = document.createTextNode(this.action);
 		container.appendChild(list).appendChild(text);
-	}
-
-	return obj;
-}
-
-function refreshTodos() {
-	// select all todods
-	var todoList = getById("todoList");
-	// remove them
-	while (todoList.firstChild) {
-		todoList.removeChild(todoList.firstChild)
-	}
-
-	// render all todos
-	for (t in todos) {
-		var todo = todos[t];
-		console.log(todo);
-		todo.render();
+	},
+	time: function() {
+		return Date.now()
 	}
 }
 
-// predefined todos
-var todos = [
-	makeTodo({
-		action: "take out the garbage",
-		time: Date.now()
-	}),
-	makeTodo({
-		action: "wash the dishes",
-		time: Date.now()
-	})
-]
+/*
+ * TodoList
+ */
 
-// add todos click event
-var button = getById("submit")
-button.onclick = function() {
-	todos.push(makeTodo({
-		action: getById("action").value,
-		time: Date.now()
-	}));
-	refreshTodos();
-	return false;
+function TodoList(options) {
+	mix(options, this);
 }
 
-window.onload = refreshTodos();
+TodoList.prototype = {
+	id: 'todoList',
+	todos: [],
 
+	add: function(action) {
+		todo = new Todo({action: action});
+		this.todos.push(todo);
+		this.refresh()
+	},
+
+	refresh: function() {
+		list_id = getById(this.id);
+		while(list_id.firstChild)
+			list_id.removeChild(list_id.firstChild);
+		this.todos.forEach(function(t){
+			t.render();
+			console.log(t.action)
+		})
+	}
+}
+
+function makeTodo(options) {
+	var obj = obj || new TodoList(options);
+	return obj
+}
+
+/*
+ * TodoAction
+ */
+
+function TodoAction(options) {
+	mix(options, this);
+	this.element = getById('submit');
+	this.element.onclick = this.push_todo;
+}
+
+TodoAction.prototype = {
+	push_todo: function() {
+		action = getById('action').value;
+		if (action) {
+			makeTodo().add(action);
+			setById('action', '')
+		}
+		return false
+	}
+}
+
+action = new TodoAction();
